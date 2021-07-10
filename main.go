@@ -10,21 +10,11 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/emperorner0/jeopardy-api-golang/model"
 	// "gorm.io/driver/mysql"
-	"gorm.io/gorm"
 )
 
-type Question struct {
-	gorm.Model
-	ShowNumber int    `json:"show_number"`
-	Round      string `json:"round"`
-	Category   string `json:"category"`
-	Value      int    `json:"value"`
-	Question   string `json:"question"`
-	Answer     string `json:"answer"`
-}
-
-func csvToStruct(s string) *[]Question {
+func csvToStruct(s string) *[]model.Question {
 
 	csvfile, err := os.Open(s)
 	if err != nil {
@@ -55,7 +45,7 @@ func csvToStruct(s string) *[]Question {
 	return &qsts
 }
 
-func jsonEncode(q []Question) []byte {
+func jsonEncode(q []model.Question) []byte {
 	buf := new(bytes.Buffer)
 
 	enc := json.NewEncoder(buf)
