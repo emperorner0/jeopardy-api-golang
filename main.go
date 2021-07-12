@@ -1,73 +1,41 @@
 package main
 
 import (
-	"bytes"
-	"encoding/csv"
-	"encoding/json"
-	"fmt"
+	m "jeopardy-api/model"
 	"log"
-	"os"
-	"strconv"
-	"strings"
+	"net/http"
 
-	"github.com/emperorner0/jeopardy-api-golang/model"
-	// "gorm.io/driver/mysql"
+	"github.com/gorilla/mux"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
-func csvToStruct(s string) *[]model.Question {
-
-	csvfile, err := os.Open(s)
-	if err != nil {
-		log.Fatalln("Couldn't Open CSV", err)
-	}
-	defer csvfile.Close()
-
-	r := csv.NewReader(csvfile)
-
-	records, err := r.ReadAll()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	var qst Question
-	var qsts []Question
-
-	for _, rec := range records {
-		qst.ShowNumber, _ = strconv.Atoi(rec[0])
-		qst.Round = rec[1]
-		qst.Category = rec[2]
-		qst.Value, _ = strconv.Atoi(strings.Replace(rec[3], "$", "0", -1))
-		qst.Question = rec[4]
-		qst.Answer = rec[5]
-		qsts = append(qsts, qst)
-	}
-	return &qsts
+func handleRoutes() {
+	r := mux.NewRouter()
+	r.HandleFunc("/", homeHandle)
+	r.HandleFunc("/upload", uploadCSV).Methods("POST")
+	r.HandleFunc("/questions/{num}", allQuestions)
+	r.HandleFunc("/question/{id}", questionByID)
+	r.HandleFunc("/questionsByValue/{value}", questionsByValue)
+	r.HandleFunc("/questionsByCategory/{category}", questionsByCategory)
+	r.HandleFunc("/questionsByRound/{round}", questionsByRound)
+	r.HandleFunc("/questionsByRoundAndCategory/{round}/{category}", questionsByRoundAndCategory)
+	r.HandleFunc("/addQuestion/{shownumber}/{round}/{category}/{value}/{question}/{answer}", addQuestion).Methods("POST")
+	r.HandleFunc("/deleteQuestion/{id}", deleteQuestion).Methods("DELETE")
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
 
-func jsonEncode(q []model.Question) []byte {
-	buf := new(bytes.Buffer)
-
-	enc := json.NewEncoder(buf)
-	enc.SetEscapeHTML(false)
-	err := enc.Encode(q)
+func dbIntialize() {
+	DBConn := "root:<password>!@/QuestionsDB?charset=utf8&parseTime=True&loc=Local"
+	db, err := gorm.Open(mysql.Open(DBConn), &gorm.Config{})
 	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		panic("failed to connect database")
 	}
-
-	return buf.Bytes()
+	db.AutoMigrate(&m.Question{})
 }
-
 func main() {
 
-	// DBConn := "root:Haloking12!@tcp(127.0.0.1:3306)/QuestionsDB"
-	// db := mysql.Open(DBConn)
-
-	filePath := "test.csv"
-
-	qsts := csvToStruct(filePath)
-
-	fmt.Println(string(jsonEncode(*qsts)))
+	dbIntialize()
+	handleRoutes()
 
 }
