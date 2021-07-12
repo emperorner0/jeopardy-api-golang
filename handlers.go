@@ -16,7 +16,7 @@ import (
 )
 
 func homeHandle(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Hello world!")
+	fmt.Fprintf(w, "Jeopardy! API")
 }
 
 func uploadCSV(w http.ResponseWriter, r *http.Request) {
